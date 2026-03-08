@@ -19,32 +19,31 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Extract Everything
+      - name: Extract Project Files
         run: |
-          # 1. Сваляне и първо разархивиране
+          # 1. Сваляне на главния архив
           wget "https://github.com/shuev92/MythosRise/archive/refs/heads/main.zip" -O main.zip
           unzip main.zip
           
-          # 2. Разархивиране на вътрешния проект
-          # Търсим къде е вътрешният ZIP и го разархивираме в папка "deep_extract"
-          INNER_ZIP=$(find . -name "MythosRise_v6_READY_TO_TEST.zip")
-          unzip "$INNER_ZIP" -d deep_extract
+          # 2. Разархивиране на ВСИЧКИ вътрешни zip файлове автоматично
+          # Използваме 'find', за да не ни пречат интервалите в имената
+          find . -name "*.zip" -not -name "main.zip" -exec unzip -o {} -d extracted_source \;
 
-      - name: Build APK (Auto-detect Path)
+      - name: Build APK
         run: |
-          # Намираме къде е gradlew автоматично
-          GRADLEW_PATH=$(find deep_extract -name "gradlew")
-          PROJECT_ROOT=$(dirname "$GRADLEW_PATH")
+          # Автоматично намиране на папката с gradlew
+          GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
+          PROJECT_DIR=$(dirname "$GRADLEW_PATH")
           
-          echo "Проектът е намерен в: $PROJECT_ROOT"
-          cd "$PROJECT_ROOT"
+          echo "Проектът е в: $PROJECT_DIR"
+          cd "$PROJECT_DIR"
           
-          # Даваме права и строим
+          # Стартиране на компилацията
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MythosRise-Debug-APK
+          name: MythosRise-Final-APK
           path: "**/build/outputs/apk/debug/*.apk"
