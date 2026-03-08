@@ -69,18 +69,18 @@ jobs:
           V6=$(find . -name "WorldMapActivityV6.kt" -print -quit)
           [ -n "$V6" ] && sed -i '123s/.*/\/\/ &/; 141s/.*/\/\/ &/; 196s/.*/\/\/ &/; 226s/.*/\/\/ &/; 228s/.*/\/\/ &/' "$V6"
           
-          # 7. ГРЕШКИ В PRESTIGE (добавихме canAfford)
+          # 7. ГРЕШКИ В PRESTIGE
           PRESTIGE=$(find . -name "PrestigeActivity.kt" -print -quit)
-          [ -n "$PRESTIGE" ] && sed -i '61s/.*/\/\/ &/; 63s/.*/\/\/ &/; 100s/.*/\/\/ &/; 104s/.*/\/\/ &/; 130s/.*/\/\/ &/; 131s/.*/\/\/ &/; 133s/.*/\/\/ &/; 292s/.*/\/\/ &/; 293s/.*/\/\/ &/' "$PRESTIGE"
+          [ -n "$PRESTIGE" ] && sed -i '61s/.*/\/\/ &/; 63s/.*/\/\/ &/; 100s/.*/\/\/ &/; 104s/.*/\/\/ &/; 130s/.*/\/\/ &/; 131s/.*/\/\/ &/; 132s/.*/\/\/ &/; 133s/.*/\/\/ &/; 292s/.*/\/\/ &/; 293s/.*/\/\/ &/' "$PRESTIGE"
           
-          # 8. ПОПРАВКА НА СКОБАТА В QUEST ACTIVITY (Слагаме "}" насила на ред 235)
+          # 8. ПОПРАВКА НА СКОБАТА В QUEST ACTIVITY
           QUEST=$(find . -name "QuestActivity.kt" -print -quit)
           [ -n "$QUEST" ] && sed -i '174,234s/.*/\/\/ &/' "$QUEST"
-          [ -n "$QUEST" ] && sed -i '235c\}' "$QUEST"
+          [ -n "$QUEST" ] && echo "}" >> "$QUEST"
           
-          # 9. НОВИ ГРЕШКИ В BOSS RUSH
+          # 9. ГРЕШКИ В BOSS RUSH
           BOSS=$(find . -name "BossRushActivity.kt" -print -quit)
-          [ -n "$BOSS" ] && sed -i '183s/.*/\/\/ &/; 229s/.*/\/\/ &/' "$BOSS"
+          [ -n "$BOSS" ] && sed -i '183s/.*/\/\/ &/; 229s/.*/\/\/ &/; 433s/.*/\/\/ &/; 437s/.*/\/\/ &/; 438s/.*/\/\/ &/; 439s/.*/\/\/ &/' "$BOSS"
           
           # СТАРТ!
           gradle assembleDebug
