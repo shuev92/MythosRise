@@ -21,29 +21,29 @@ jobs:
 
       - name: Extract Project Files
         run: |
+          # 1. Сваляне и разархивиране на основния архив
           wget "https://github.com/shuev92/MythosRise/archive/refs/heads/main.zip" -O main.zip
           unzip main.zip
+          
+          # 2. Намиране и разархивиране на вътрешния проект
           INNER_ZIP=$(find . -name "*.zip" -not -name "main.zip" -print -quit)
           unzip "$INNER_ZIP" -d final_extract
 
       - name: Build APK (Strict Version Control)
         run: |
-          # 1. Намиране на корена
+          # Намираме корена на проекта
           BUILD_GRADLE_PATH=$(find . -name "build.gradle" -not -path "*/app/*" -print -quit)
           PROJECT_ROOT=$(dirname "$BUILD_GRADLE_PATH")
           cd "$PROJECT_ROOT"
           
-          # 2. ФИКС: Инсталираме точно Gradle 7.5 (за да избегнем грешката с Gradle 10)
-          # Това е най-стабилната версия за твоя тип проект
-          wget https://services.gradle.org/distributions/gradle-7.5-bin.zip -O gradle.zip
+          # ФИКС: Ръчно инсталираме Gradle 7.5, за да избегнем грешката с "версия 10"
+          wget -q https://services.gradle.org/distributions/gradle-7.5-bin.zip -O gradle.zip
           unzip -q gradle.zip
           export PATH=$PWD/gradle-7.5/bin:$PATH
           
-          # 3. Генерираме wrapper-а с тази версия
+          # Генерираме wrapper и стартираме компилацията
           gradle wrapper --gradle-version 7.5
           chmod +x gradlew
-          
-          # 4. СТАРТ: Компилация с игнориране на Lint
           ./gradlew assembleDebug -x lint
 
       - name: Upload APK
