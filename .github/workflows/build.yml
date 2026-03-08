@@ -53,28 +53,30 @@ jobs:
             sed -i 's/minSdkVersion .*/minSdkVersion 26/g' "$APP_GRADLE"
           fi
           
-          # 4. ИЗТРИВАМЕ СТАРИТЕ И СЧУПЕНИ ВЕРСИИ НА КАРТАТА
+          # 4. ИЗТРИВАМЕ СТАРИТЕ ВЕРСИИ И НАСОЧВАМЕ КЪМ V6
           find . -name "WorldMapActivity.kt" -exec rm -f {} \;
           find . -name "WorldMapActivityV5.kt" -exec rm -f {} \;
+          find . -name "*.kt" -exec sed -i 's/WorldMapActivity::class/WorldMapActivityV6::class/g' {} \;
           
           # 5. Масово заглушаване на стари променливи
           find . -name "*.kt" -exec sed -i '/isFakeBoldText/s/^/\/\/ /g' {} \;
           find . -name "*.kt" -exec sed -i '/progressTarget/s/^/\/\/ /g' {} \;
           
-          # 6. Специфични единични грешки (от миналия път)
+          # 6. Специфични единични грешки
           STORY=$(find . -name "StoryActivity.kt" -print -quit)
           [ -n "$STORY" ] && sed -i '205s/.*/\/\/ &/' "$STORY"
           
           V6=$(find . -name "WorldMapActivityV6.kt" -print -quit)
           [ -n "$V6" ] && sed -i '123s/.*/\/\/ &/; 141s/.*/\/\/ &/; 196s/.*/\/\/ &/; 226s/.*/\/\/ &/; 228s/.*/\/\/ &/' "$V6"
           
-          # 7. НОВИТЕ ГРЕШКИ (Prestige и Quest)
+          # 7. ГРЕШКИ В PRESTIGE
           PRESTIGE=$(find . -name "PrestigeActivity.kt" -print -quit)
-          [ -n "$PRESTIGE" ] && sed -i '293s/.*/\/\/ &/' "$PRESTIGE"
+          [ -n "$PRESTIGE" ] && sed -i '61s/.*/\/\/ &/; 63s/.*/\/\/ &/; 100s/.*/\/\/ &/; 104s/.*/\/\/ &/; 292s/.*/\/\/ &/; 293s/.*/\/\/ &/' "$PRESTIGE"
           
+          # 8. ПОПРАВКА НА СКОБАТА В QUEST ACTIVITY
           QUEST=$(find . -name "QuestActivity.kt" -print -quit)
-          # Коментираме целия блок от 174 до 235 ред
-          [ -n "$QUEST" ] && sed -i '174,235s/.*/\/\/ &/' "$QUEST"
+          # Оставяме ред 235 отключен, защото там е липсващата скоба "}"
+          [ -n "$QUEST" ] && sed -i '174,234s/.*/\/\/ &/' "$QUEST"
           
           # СТАРТ!
           gradle assembleDebug
