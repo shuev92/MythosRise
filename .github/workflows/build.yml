@@ -1,4 +1,4 @@
- name: Build MythosRise APK
+ name:Build MythosRise APK
 
 on:
   push:
