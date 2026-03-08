@@ -39,13 +39,20 @@ jobs:
           echo "android.useAndroidX=true" >> gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
           
-          # ХИРУРГИЧЕСКА ПОПРАВКА 2.0: Търсим само думата "Divider"
+          # ХИРУРГИЧЕСКА ПОПРАВКА 1: Отрязаният код в activity_world_map.xml
           XML_FILE=$(find . -name "activity_world_map.xml" -print -quit)
           if [ -n "$XML_FILE" ]; then
             echo "Поправяме $XML_FILE..."
-            # Трием от реда с "Divider" до края на файла
             sed -i '/Divider/,$d' "$XML_FILE"
             echo "Грешният код е премахнат!"
+          fi
+          
+          # ХИРУРГИЧЕСКА ПОПРАВКА 2: Оправяме версията на Android заради иконата
+          APP_GRADLE=$(find . -name "build.gradle" -path "*/app/*" -print -quit)
+          if [ -n "$APP_GRADLE" ]; then
+            echo "Вдигаме минималната версия на Android до 26..."
+            sed -i 's/minSdk .*/minSdk 26/g' "$APP_GRADLE"
+            sed -i 's/minSdkVersion .*/minSdkVersion 26/g' "$APP_GRADLE"
           fi
           
           gradle assembleDebug
