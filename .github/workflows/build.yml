@@ -25,22 +25,24 @@ jobs:
           wget "https://github.com/shuev92/MythosRise/archive/refs/heads/main.zip" -O main.zip
           unzip main.zip
           
-          # 2. Разархивиране на ВСИЧКИ вътрешни zip файлове автоматично
-          # Използваме 'find', за да не ни пречат интервалите в имената
-          find . -name "*.zip" -not -name "main.zip" -exec unzip -o {} -d extracted_source \;
+          # 2. Намиране на вътрешния ZIP и разархивирането му директно ТУК
+          # Използваме -j (junk paths), за да изхвърлим излишните папки от архива
+          find . -name "*.zip" -not -name "main.zip" -exec unzip -o -j {} -d . \;
 
       - name: Build APK
         run: |
-          # Автоматично намиране на папката с gradlew
-          GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
-          PROJECT_DIR=$(dirname "$GRADLEW_PATH")
-          
-          echo "Проектът е в: $PROJECT_DIR"
-          cd "$PROJECT_DIR"
-          
-          # Стартиране на компилацията
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          # Тъй като използвахме -j, gradlew ТРЯБВА да е тук
+          if [ -f "gradlew" ]; then
+            chmod +x gradlew
+            ./gradlew assembleDebug
+          else
+            # Ако пак го няма, го търсим и влизаме при него
+            GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
+            PROJECT_DIR=$(dirname "$GRADLEW_PATH")
+            cd "$PROJECT_DIR"
+            chmod +x gradlew
+            ./gradlew assembleDebug
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
