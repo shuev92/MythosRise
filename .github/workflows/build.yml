@@ -31,44 +31,21 @@ jobs:
           INNER_ZIP=$(find . -name "*.zip" -not -name "main.zip" -print -quit)
           unzip "$INNER_ZIP" -d app_source
 
-      - name: Fix Code and Build APK
+      - name: Run Build with Fixes
         run: |
+          # 1. Намираме корена на проекта
           ROOT_PATH=$(find app_source -name "build.gradle" -not -path "*/app/*" -print -quit | xargs dirname)
           cd "$ROOT_PATH"
           
+          # 2. ФИКС: Активираме AndroidX поддръжката в gradle.properties
           echo "android.useAndroidX=true" >> gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
           
-          # ХИРУРГИЧЕСКА ПОПРАВКА 1: XML файла
-          XML_FILE=$(find . -name "activity_world_map.xml" -print -quit)
-          if [ -n "$XML_FILE" ]; then
-            sed -i '/Divider/,$d' "$XML_FILE"
-          fi
-          
-          # ХИРУРГИЧЕСКА ПОПРАВКА 2: Версията на Android
-          APP_GRADLE=$(find . -name "build.gradle" -path "*/app/*" -print -quit)
-          if [ -n "$APP_GRADLE" ]; then
-            sed -i 's/minSdk .*/minSdk 26/g' "$APP_GRADLE"
-            sed -i 's/minSdkVersion .*/minSdkVersion 26/g' "$APP_GRADLE"
-          fi
-          
-          # ХИРУРГИЧЕСКА ПОПРАВКА 3: Заглушаване на грешките в Kotlin кода
-          KOTLIN_FILE=$(find . -name "WorldMapActivityV6.kt" -print -quit)
-          if [ -n "$KOTLIN_FILE" ]; then
-            echo "Заглушаване на програмните грешки в $KOTLIN_FILE..."
-            # Добавяме "//" в началото на проблемните редове, за да ги превърнем в коментари
-            sed -i '123s/.*/\/\/ &/' "$KOTLIN_FILE"
-            sed -i '141s/.*/\/\/ &/' "$KOTLIN_FILE"
-            sed -i '196s/.*/\/\/ &/' "$KOTLIN_FILE"
-            sed -i '213s/.*/\/\/ &/' "$KOTLIN_FILE"
-            sed -i '224s/.*/\/\/ &/' "$KOTLIN_FILE"
-            sed -i '226s/.*/\/\/ &/' "$KOTLIN_FILE"
-          fi
-          
-          gradle assembleDebug
-          
+          # 3. Стартираме компилацията
+          gradle assembleDebug --stacktrace
+
       - name: Upload APK
-        if: success()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: MythosRise-Final-APK
