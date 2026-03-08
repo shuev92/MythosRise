@@ -1,11 +1,44 @@
-- name: Download Latest Release
-  uses: dsaltares/fetch-gh-release-asset@master
-  with:
-    repo: 'shuev92/MythosRise'
-    version: 'latest' # Автоматично взема последната версия
-    file: 'MythosRise_v6_READY_TO_TEST_.zip' # Тук трябва да е точното име на файла
-    token: ${{ secrets.GITHUB_TOKEN }}
+name: Build MythosRise APK
 
-- name: Unzip project
-  run: |
-    unzip MythosRise_v6_READY_TO_TEST_.zip -d app_source
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Download and Unzip Source
+        run: |
+          # Теглим файла. Ако пак даде 404, ще спрем дотук с чиста грешка.
+          curl -L -o project.zip "https://github.com/shuev92/MythosRise/releases/download/v6/MythosRise_v6_READY_TO_TEST_.zip"
+          
+          if [ -f project.zip ]; then
+            unzip project.zip -d app_source
+          else
+            echo "Файлът не беше намерен!"
+            exit 1
+          fi
+
+      - name: Build with Gradle
+        run: |
+          cd app_source
+          # Проверяваме дали gradlew е изпълним
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MythosRise-Debug-APK
+          path: app_source/app/build/outputs/apk/debug/*.apk
