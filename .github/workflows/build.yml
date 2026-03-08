@@ -23,27 +23,25 @@ jobs:
         run: |
           wget "https://github.com/shuev92/MythosRise/archive/refs/heads/main.zip" -O main.zip
           unzip main.zip
-          # Търсим вътрешния архив и го разархивираме
           INNER_ZIP=$(find . -name "*.zip" -not -name "main.zip" -print -quit)
           unzip "$INNER_ZIP" -d final_extract
 
-      - name: Build APK (Fixing missing Gradle)
+      - name: Build APK (with Clean & Version Fix)
         run: |
-          # 1. Намираме къде е основният build.gradle файл
+          # Намираме корена на проекта
           BUILD_GRADLE_PATH=$(find . -name "build.gradle" -not -path "*/app/*" -print -quit)
           PROJECT_ROOT=$(dirname "$BUILD_GRADLE_PATH")
           cd "$PROJECT_ROOT"
           
-          echo "Проектът е в: $PROJECT_ROOT"
-          
-          # 2. Понеже няма gradlew, инсталираме го на място
-          gradle wrapper
-          
-          # 3. Даваме права и строим
+          # 1. Генерираме Gradle с конкретна версия (8.0 е добра за JDK 17)
+          gradle wrapper --gradle-version 8.0
           chmod +x gradlew
-          ./gradlew assembleDebug
+          
+          # 2. Почистване и изграждане с по-подробен лог за грешки
+          ./gradlew clean assembleDebug --stacktrace
 
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: MythosRise-Final-APK
