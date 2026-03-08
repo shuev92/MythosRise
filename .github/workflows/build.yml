@@ -53,20 +53,17 @@ jobs:
             sed -i 's/minSdkVersion .*/minSdkVersion 26/g' "$APP_GRADLE"
           fi
           
-          # 4. Изтриваме старото копие V5
+          # 4. ИЗТРИВАМЕ СТАРИТЕ И СЧУПЕНИ ВЕРСИИ НА КАРТАТА
+          find . -name "WorldMapActivity.kt" -exec rm -f {} \;
           find . -name "WorldMapActivityV5.kt" -exec rm -f {} \;
           
-          # 5. МАСОВО ЗАГЛУШАВАНЕ НА ГРЕШКИТЕ (The Carpet Bomb)
-          # Автоматично заглушаваме всеки ред в целия проект, който съдържа тези липсващи думи:
+          # 5. Масово заглушаване на isFakeBoldText и progressTarget във всички останали файлове
           find . -name "*.kt" -exec sed -i '/isFakeBoldText/s/^/\/\/ /g' {} \;
           find . -name "*.kt" -exec sed -i '/progressTarget/s/^/\/\/ /g' {} \;
           
           # 6. Специфични единични грешки
           STORY=$(find . -name "StoryActivity.kt" -print -quit)
           [ -n "$STORY" ] && sed -i '205s/.*/\/\/ &/' "$STORY"
-          
-          WORLD=$(find . -name "WorldMapActivity.kt" -print -quit)
-          [ -n "$WORLD" ] && sed -i '16s/.*/\/\/ &/; 110s/.*/\/\/ &/; 111s/.*/\/\/ &/; 143s/.*/\/\/ &/' "$WORLD"
           
           V6=$(find . -name "WorldMapActivityV6.kt" -print -quit)
           [ -n "$V6" ] && sed -i '123s/.*/\/\/ &/; 141s/.*/\/\/ &/; 196s/.*/\/\/ &/; 226s/.*/\/\/ &/; 228s/.*/\/\/ &/' "$V6"
