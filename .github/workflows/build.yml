@@ -31,21 +31,31 @@ jobs:
           INNER_ZIP=$(find . -name "*.zip" -not -name "main.zip" -print -quit)
           unzip "$INNER_ZIP" -d app_source
 
-      - name: Read File and Build
+      - name: Fix Code and Build APK
         run: |
+          # 1. Намираме корена на проекта
           ROOT_PATH=$(find app_source -name "build.gradle" -not -path "*/app/*" -print -quit | xargs dirname)
           cd "$ROOT_PATH"
           
+          # 2. Оправяме библиотеките (AndroidX)
           echo "android.useAndroidX=true" >> gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
           
-          # ПОКАЗВАМЕ ФАЙЛА НА ЕКРАНА:
+          # 3. ХИРУРГИЧЕСКА ПОПРАВКА: Изтриваме отрязания код в края на файла
           XML_FILE=$(find . -name "activity_world_map.xml" -print -quit)
           if [ -n "$XML_FILE" ]; then
-            echo "=== СЪДЪРЖАНИЕ НА activity_world_map.xml (ПОСЛЕДНИ 30 РЕДА) ==="
-            tail -n 30 "$XML_FILE"
-            echo "==============================================================="
+            echo "Поправяме $XML_FILE..."
+            # Командата търси "" и трие всичко от там до края
+            sed -i '//,$d' "$XML_FILE"
+            echo "Грешният код е премахнат!"
           fi
           
-          # Стартираме компилацията (знаем, че ще даде грешка, но ни трябва съдържанието)
+          # 4. Стартираме компилацията!
           gradle assembleDebug
+          
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MythosRise-Final-APK
+          path: "**/build/outputs/apk/debug/*.apk"
