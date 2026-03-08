@@ -13,10 +13,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 11
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '11'
+          java-version: '17'
           distribution: 'temurin'
 
       - name: Extract Project Files
@@ -26,19 +26,23 @@ jobs:
           INNER_ZIP=$(find . -name "*.zip" -not -name "main.zip" -print -quit)
           unzip "$INNER_ZIP" -d final_extract
 
-      - name: Build APK (Compatibility Mode)
+      - name: Build APK (Auto-Fix & Build)
         run: |
-          # Намираме корена на проекта
+          # 1. Намиране на корена
           BUILD_GRADLE_PATH=$(find . -name "build.gradle" -not -path "*/app/*" -print -quit)
           PROJECT_ROOT=$(dirname "$BUILD_GRADLE_PATH")
           cd "$PROJECT_ROOT"
           
-          # Генерираме Gradle wrapper (версия 7.5 е най-съвместима с Java 11)
-          gradle wrapper --gradle-version 7.5
+          # 2. Инсталиране на съвместим Gradle Wrapper
+          gradle wrapper --gradle-version 8.0
           chmod +x gradlew
           
-          # Стартираме компилацията, като игнорираме Lint и дребни грешки
-          ./gradlew assembleDebug -x lint -Pandroid.experimental.sdk.allowUnderlineSdkLevel=true
+          # 3. ПОПРАВКА: Премахваме дублиращи се или грешни настройки в движение
+          # Това решава проблеми с несъвместими плъгини
+          sed -i 's/android.defaults.buildfeatures.buildconfig=true//g' gradle.properties || true
+          
+          # 4. СТАРТ: Компилация с прескачане на проверките за грешки (Lint)
+          ./gradlew assembleDebug -x lint --stacktrace
 
       - name: Upload APK
         if: always()
