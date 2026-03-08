@@ -18,27 +18,26 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          # Без кеш, за да избегнем първата грешка от снимката ти
 
-      - name: Download project zip
-        run: wget "https://github.com/shuev92/MythosRise/archive/refs/heads/main.zip" -O project.zip
-
-      - name: Unzip and Move Files
+      - name: Download and Extract Source
         run: |
-          unzip project.zip
-          # Тази команда намира къде е gradlew и мести всичко от тази папка тук
-          CHILD_DIR=$(find . -maxdepth 2 -name "gradlew" -exec dirname {} \;)
-          if [ ! -z "$CHILD_DIR" ] && [ "$CHILD_DIR" != "." ]; then
-            mv $CHILD_DIR/* .
-          fi
-          rm -rf project.zip
+          # 1. Сваляме главния архив
+          wget "https://github.com/shuev92/MythosRise/archive/refs/heads/main.zip" -O main.zip
+          unzip main.zip
+          
+          # 2. Влизаме в папката и разархивираме истинския проект
+          # Използваме wildcard (*), защото името съдържа интервали и версии
+          unzip "MythosRise-main/MythosRise_v6_READY_TO_TEST*.zip" -d final_project
+          
+          # 3. Преместваме всичко в основната директория
+          mv final_project/*/* . || mv final_project/* . || true
 
       - name: Grant execute permission for gradlew
         run: |
           if [ -f "gradlew" ]; then
             chmod +x gradlew
           else
-            echo "Грешка: gradlew все още не е намерен!"
+            echo "Грешка: gradlew все още липсва! Провери дали в под-архива има Android проект."
             ls -R
             exit 1
           fi
