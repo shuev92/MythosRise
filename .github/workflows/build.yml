@@ -33,24 +33,21 @@ jobs:
 
       - name: Fix Code and Build APK
         run: |
-          # 1. Намираме корена на проекта
           ROOT_PATH=$(find app_source -name "build.gradle" -not -path "*/app/*" -print -quit | xargs dirname)
           cd "$ROOT_PATH"
           
-          # 2. Оправяме библиотеките (AndroidX)
           echo "android.useAndroidX=true" >> gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
           
-          # 3. ХИРУРГИЧЕСКА ПОПРАВКА: Изтриваме отрязания код в края на файла
+          # ХИРУРГИЧЕСКА ПОПРАВКА 2.0: Търсим само думата "Divider"
           XML_FILE=$(find . -name "activity_world_map.xml" -print -quit)
           if [ -n "$XML_FILE" ]; then
             echo "Поправяме $XML_FILE..."
-            # Командата търси "" и трие всичко от там до края
-            sed -i '//,$d' "$XML_FILE"
+            # Трием от реда с "Divider" до края на файла
+            sed -i '/Divider/,$d' "$XML_FILE"
             echo "Грешният код е премахнат!"
           fi
           
-          # 4. Стартираме компилацията!
           gradle assembleDebug
           
       - name: Upload APK
