@@ -21,26 +21,27 @@ jobs:
 
       - name: Extract Everything
         run: |
-          # Сваляне
+          # 1. Сваляме и разархивираме главния архив
           wget "https://github.com/shuev92/MythosRise/archive/refs/heads/main.zip" -O main.zip
           unzip main.zip
           
-          # Разархивиране на вътрешния проект в папка "src"
+          # 2. Намираме вътрешния проект и го разархивираме в папка 'src'
           INNER_ZIP=$(find . -name "*.zip" -not -name "main.zip" -print -quit)
           unzip "$INNER_ZIP" -d src
 
-      - name: Build with Inline Gradle
+      - name: Install Gradle and Build
         run: |
-          # Намираме къде е build.gradle
+          # 1. Инсталираме Gradle директно в системата (това решава проблема с липсващия gradlew)
+          sudo apt-get update
+          sudo apt-get install -y gradle
+          
+          # 2. Намираме къде е build.gradle
           ROOT_PATH=$(find src -name "build.gradle" -not -path "*/app/*" -print -quit | xargs dirname)
           cd "$ROOT_PATH"
           
-          # Вместо да търсим инсталиран gradle, ползваме вградения в машината инструмент
-          # и игнорираме всички грешки от липсващи подписи
-          mvn -version || echo "Maven not used" 
+          echo "Проектът е намерен в: $PWD"
           
-          # Тъй като нямаш wrapper, ще използваме командата за build директно през инсталирания в Ubuntu Gradle
-          sudo apt-get install -y gradle
+          # 3. Стартираме компилацията чрез системния gradle
           gradle assembleDebug --stacktrace
 
       - name: Find and Upload APK
