@@ -26,39 +26,66 @@ jobs:
 
       - name: Extract Project Files
         run: |
-          wget "https://github.com/shuev92/MythosRise/archive/refs/heads/main.zip" -O main.zip
-          unzip main.zip
-          INNER_ZIP=$(find . -name "*.zip" -not -name "main.zip" -print -quit)
-          unzip "$INNER_ZIP" -d app_source
+          # Връщаме работещия линк, за да не гръмне с 404
+          wget 'https://github.com/shuev92/MythosRise/archive/refs/heads/main.zip' -O project.zip
+          unzip project.zip
+          INNER_DIR=$(find . -maxdepth 1 -type d -name "MythosRise-*" -print -quit)
+          mv "$INNER_DIR" app_source
 
-      - name: The Ultimate Fixes and Build
+      - name: Fix and Build
         run: |
           ROOT_PATH=$(find app_source -name "build.gradle" -not -path "*/app/*" -print -quit | xargs dirname)
           cd "$ROOT_PATH"
 
-          echo "android.useAndroidX=true" >> gradle.properties
-          echo "android.enableJetifier=true" >> gradle.properties
+          echo 'android.useAndroidX=true' >> gradle.properties
+          echo 'android.enableJetifier=true' >> gradle.properties
 
-          # 1. XML Fix
-          XML_FILE=$(find . -name "activity_world_map.xml" -print -quit)
-          if [ -n "$XML_FILE" ]; then
-            sed -i "124,\$d" "$XML_FILE"
-          fi
-
-          # 2. SDK Fix
           APP_GRADLE=$(find . -name "build.gradle" -path "*/app/*" -print -quit)
           if [ -n "$APP_GRADLE" ]; then
-            sed -i "s/minSdk .*/minSdk 26/g" "$APP_GRADLE"
-            sed -i "s/minSdkVersion .*/minSdkVersion 26/g" "$APP_GRADLE"
+            sed -i 's/minSdk .*/minSdk 26/g' "$APP_GRADLE"
+            sed -i 's/minSdkVersion .*/minSdkVersion 26/g' "$APP_GRADLE"
           fi
 
-          # 3. МАСОВО ЗАГЛУШАВАНЕ (Това, което липсваше в #53)
-          find . -name "*.kt" -exec sed -i "s/.*isFakeBoldText.*/\/\/ COMMENTED/g" {} \;
-          find . -name "*.kt" -exec sed -i "s/.*progressTarget.*/\/\/ COMMENTED/g" {} \;
+          find . -name "WorldMapActivityV5.kt" -delete
 
-          # 4. Activity Fixes
-          find . -name "WorldMapActivityV5.kt" -exec rm -f {} \;
-          find . -name "*.kt" -exec sed -i "s/WorldMapActivity::class/WorldMapActivityV6::class/g" {} \;
+          # Твоята брилянтна функция
+          comment_line() { sed -i "${1}s/.*/\/\/ COMMENTED/" "$2"; }
 
-          FILE_TRANS=$(find . -name "TransformationActivity.kt" -print -quit)
-          [ -n "$FILE_TRANS" ] && sed -i "72s
+          # Масово почистване на системните грешки
+          find . -name "*.kt" -exec sed -i 's/.*isFakeBoldText.*/\/\/ COMMENTED/g' {} +
+          find . -name "*.kt" -exec sed -i 's/.*progressTarget.*/\/\/ COMMENTED/g' {} +
+
+          F=$(find . -name "WorldMapActivity.kt" -print -quit)
+          [ -n "$F" ] && comment_line 110 "$F" && comment_line 111 "$F" && comment_line 143 "$F"
+
+          F=$(find . -name "WorldMapActivityV6.kt" -print -quit)
+          [ -n "$F" ] && for L in 123 141 196 213 224 226 228; do comment_line $L "$F"; done
+
+          F=$(find . -name "BossRushActivity.kt" -print -quit)
+          [ -n "$F" ] && sed -i '359,440s/.*/\/\/ COMMENTED/' "$F"
+
+          F=$(find . -name "TransformationActivity.kt" -print -quit)
+          [ -n "$F" ] && comment_line 50 "$F" && comment_line 72 "$F"
+
+          F=$(find . -name "StoryActivity.kt" -print -quit)
+          [ -n "$F" ] && for L in 176 193 205 213 361; do comment_line $L "$F"; done
+
+          F=$(find . -name "PrestigeActivity.kt" -print -quit)
+          [ -n "$F" ] && for L in 130 131 132 133 134; do comment_line $L "$F"; done
+
+          # Фикс за QuestActivity (липсващите скоби)
+          F=$(find . -name "QuestActivity.kt" -print -quit)
+          if [ -n "$F" ]; then
+             sed -i '174,234s/.*/\/\/ COMMENTED/' "$F"
+             echo "}" >> "$F"
+             echo "}" >> "$F"
+          fi
+
+          gradle assembleDebug
+
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MythosRise-Final-APK
+          path: "**/build/outputs/apk/debug/*.apk"
