@@ -19,28 +19,29 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Download and Extract Source
+      - name: Download and Extract Project
         run: |
-          # 1. Сваляме главния архив
+          # 1. Сваляме основния архив
           wget "https://github.com/shuev92/MythosRise/archive/refs/heads/main.zip" -O main.zip
           unzip main.zip
           
-          # 2. Влизаме в папката и разархивираме истинския проект
-          # Използваме wildcard (*), защото името съдържа интервали и версии
-          unzip "MythosRise-main/MythosRise_v6_READY_TO_TEST*.zip" -d final_project
+          # 2. Разархивираме вътрешния проект в папка "extracted"
+          # Използваме кавички заради интервалите в името на файла
+          unzip "MythosRise-main/MythosRise_v6_READY_TO_TEST.zip" -d extracted
           
-          # 3. Преместваме всичко в основната директория
-          mv final_project/*/* . || mv final_project/* . || true
+          # 3. Търсим къде точно е gradlew и се местим там
+          # Според снимката ти е в: extracted/MythosRise/
+          cd extracted/MythosRise
+          
+          # Преместваме всичко от там в основната работна директория на GitHub
+          mv * .[^.]* ../../ || true
+          cd ../../
+          
+          # Почистване
+          rm -rf main.zip MythosRise-main extracted
 
       - name: Grant execute permission for gradlew
-        run: |
-          if [ -f "gradlew" ]; then
-            chmod +x gradlew
-          else
-            echo "Грешка: gradlew все още липсва! Провери дали в под-архива има Android проект."
-            ls -R
-            exit 1
-          fi
+        run: chmod +x gradlew
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug
