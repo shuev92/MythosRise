@@ -1,49 +1,11 @@
-name: Build MythosRise APK
+- name: Download Latest Release
+  uses: dsaltares/fetch-gh-release-asset@master
+  with:
+    repo: 'shuev92/MythosRise'
+    version: 'latest' # Автоматично взема последната версия
+    file: 'MythosRise_v6_READY_TO_TEST_.zip' # Тук трябва да е точното име на файла
+    token: ${{ secrets.GITHUB_TOKEN }}
 
-on:
-  push:
-    branches: [ "main" ]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: 8.5
-
-      - name: Extract Project Files
-        run: |
-          # Опитваме да изтеглим v6, но ако линкът е счупен, ще изпишем грешката без да спираме веднага
-          wget 'https://github.com/shuev92/MythosRise/releases/download/v6/MythosRise_v6_READY_TO_TEST_.zip' -O project.zip || echo "V6 Download failed, check link!"
-          
-          if [ -f project.zip ]; then
-            unzip project.zip -d app_source
-          else
-            echo "No zip file found to unzip."
-          fi
-          
-          echo "=== ZIP CONTENTS (Key Files) ==="
-          find app_source -maxdepth 4 \( -name "*.gradle" -o -name "gradlew" -o -name "settings.gradle" \)
-          
-      - name: Fix and Build
-        run: |
-          echo "=== FULL FOLDER STRUCTURE (Top 50) ==="
-          if [ -d app_source ]; then
-            find app_source -maxdepth 5
-          else
-            echo "Directory app_source does not exist!"
-            ls -la
-          fi
+- name: Unzip project
+  run: |
+    unzip MythosRise_v6_READY_TO_TEST_.zip -d app_source
