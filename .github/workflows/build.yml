@@ -19,34 +19,31 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Extract Project Files
+      - name: Extract Everything
         run: |
-          # 1. Сваляне и разархивиране на основния архив
+          # Сваляне
           wget "https://github.com/shuev92/MythosRise/archive/refs/heads/main.zip" -O main.zip
           unzip main.zip
           
-          # 2. Намиране и разархивиране на вътрешния проект
+          # Разархивиране на вътрешния проект в папка "src"
           INNER_ZIP=$(find . -name "*.zip" -not -name "main.zip" -print -quit)
-          unzip "$INNER_ZIP" -d final_extract
+          unzip "$INNER_ZIP" -d src
 
-      - name: Build APK (Strict Version Control)
+      - name: Build with Inline Gradle
         run: |
-          # Намираме корена на проекта автоматично
-          BUILD_GRADLE_PATH=$(find . -name "build.gradle" -not -path "*/app/*" -print -quit)
-          PROJECT_ROOT=$(dirname "$BUILD_GRADLE_PATH")
-          cd "$PROJECT_ROOT"
+          # Намираме къде е build.gradle
+          ROOT_PATH=$(find src -name "build.gradle" -not -path "*/app/*" -print -quit | xargs dirname)
+          cd "$ROOT_PATH"
           
-          # ФИКС: Ръчно инсталираме Gradle 7.5, за да избегнем бъга с "версия 10"
-          wget -q https://services.gradle.org/distributions/gradle-7.5-bin.zip -O gradle_dist.zip
-          unzip -q gradle_dist.zip
-          export PATH=$PWD/gradle-7.5/bin:$PATH
+          # Вместо да търсим инсталиран gradle, ползваме вградения в машината инструмент
+          # и игнорираме всички грешки от липсващи подписи
+          mvn -version || echo "Maven not used" 
           
-          # Генерираме wrapper и стартираме компилацията
-          gradle wrapper --gradle-version 7.5
-          chmod +x gradlew
-          ./gradlew assembleDebug -x lint --stacktrace
+          # Тъй като нямаш wrapper, ще използваме командата за build директно през инсталирания в Ubuntu Gradle
+          sudo apt-get install -y gradle
+          gradle assembleDebug --stacktrace
 
-      - name: Upload APK
+      - name: Find and Upload APK
         if: always()
         uses: actions/upload-artifact@v4
         with:
