@@ -19,30 +19,36 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Extract Project Files
+      - name: Force Extract Everything
         run: |
-          # 1. Сваляне на главния архив
+          # 1. Сваляме основния архив
           wget "https://github.com/shuev92/MythosRise/archive/refs/heads/main.zip" -O main.zip
           unzip main.zip
           
-          # 2. Намиране на вътрешния ZIP и разархивирането му директно ТУК
-          # Използваме -j (junk paths), за да изхвърлим излишните папки от архива
-          find . -name "*.zip" -not -name "main.zip" -exec unzip -o -j {} -d . \;
+          # 2. Намираме ВСИЧКИ zip файлове вътре и ги разархивираме
+          # Правим го рекурсивно, за да сме сигурни
+          find . -name "*.zip" -not -name "main.zip" -exec unzip -o {} -d extracted_project \;
 
-      - name: Build APK
+      - name: Build APK (Search and Destroy)
         run: |
-          # Тъй като използвахме -j, gradlew ТРЯБВА да е тук
-          if [ -f "gradlew" ]; then
-            chmod +x gradlew
-            ./gradlew assembleDebug
-          else
-            # Ако пак го няма, го търсим и влизаме при него
-            GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
-            PROJECT_DIR=$(dirname "$GRADLEW_PATH")
-            cd "$PROJECT_DIR"
-            chmod +x gradlew
-            ./gradlew assembleDebug
+          # Намираме къде е файлът gradlew, без значение колко дълбоко е
+          REAL_PATH=$(find . -name "gradlew" -print -quit)
+          
+          if [ -z "$REAL_PATH" ]; then
+            echo "ГРЕШКА: gradlew не е намерен никъде!"
+            ls -R
+            exit 1
           fi
+          
+          # Влизаме в папката на проекта
+          PROJECT_ROOT=$(dirname "$REAL_PATH")
+          cd "$PROJECT_ROOT"
+          
+          echo "Работим в директория: $PROJECT_ROOT"
+          
+          # Даваме права и строим
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
