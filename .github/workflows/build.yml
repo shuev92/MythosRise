@@ -18,21 +18,30 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          # Премахнахме кеша тук, за да не дава грешка, преди да сме разархивирали
+          # Без кеш, за да избегнем първата грешка от снимката ти
 
       - name: Download project zip
         run: wget "https://github.com/shuev92/MythosRise/archive/refs/heads/main.zip" -O project.zip
 
-      - name: Unzip project
+      - name: Unzip and Move Files
         run: |
           unzip project.zip
-          # Преместваме всичко от подпапката в основната директория
-          mv MythosRise-main/* . || true
-          # Почистваме
-          rm -rf MythosRise-main project.zip
+          # Тази команда намира къде е gradlew и мести всичко от тази папка тук
+          CHILD_DIR=$(find . -maxdepth 2 -name "gradlew" -exec dirname {} \;)
+          if [ ! -z "$CHILD_DIR" ] && [ "$CHILD_DIR" != "." ]; then
+            mv $CHILD_DIR/* .
+          fi
+          rm -rf project.zip
 
       - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+        run: |
+          if [ -f "gradlew" ]; then
+            chmod +x gradlew
+          else
+            echo "Грешка: gradlew все още не е намерен!"
+            ls -R
+            exit 1
+          fi
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug
@@ -41,4 +50,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: MythosRise-Debug-APK
-          path: app/build/outputs/apk/debug/*.apk
+          path: "**/build/outputs/apk/debug/*.apk"
