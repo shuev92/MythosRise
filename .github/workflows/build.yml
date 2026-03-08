@@ -26,73 +26,24 @@ jobs:
 
       - name: Extract Project Files
         run: |
-          wget 'https://github.com/shuev92/MythosRise/archive/refs/heads/main.zip' -O project.zip
-          unzip project.zip
-          # Използваме гъвкаво намиране на разархивираната папка
-          mv MythosRise-main app_source || mv $(find . -maxdepth 1 -type d -name "MythosRise*") app_source
-
+          # Опитваме да изтеглим v6, но ако линкът е счупен, ще изпишем грешката без да спираме веднага
+          wget 'https://github.com/shuev92/MythosRise/releases/download/v6/MythosRise_v6_READY_TO_TEST_.zip' -O project.zip || echo "V6 Download failed, check link!"
+          
+          if [ -f project.zip ]; then
+            unzip project.zip -d app_source
+          else
+            echo "No zip file found to unzip."
+          fi
+          
+          echo "=== ZIP CONTENTS (Key Files) ==="
+          find app_source -maxdepth 4 \( -name "*.gradle" -o -name "gradlew" -o -name "settings.gradle" \)
+          
       - name: Fix and Build
         run: |
-          # Твоята нова логика за намиране на правилния път
-          ROOT_PATH=$(find app_source -name "settings.gradle" -print -quit | xargs dirname)
-          if [ -z "$ROOT_PATH" ]; then
-            ROOT_PATH=$(find app_source -maxdepth 3 -name "gradlew" -print -quit | xargs dirname)
+          echo "=== FULL FOLDER STRUCTURE (Top 50) ==="
+          if [ -d app_source ]; then
+            find app_source -maxdepth 5
+          else
+            echo "Directory app_source does not exist!"
+            ls -la
           fi
-          echo "Project root: $ROOT_PATH"
-          cd "$ROOT_PATH"
-
-          # Базови фиксове
-          echo 'android.useAndroidX=true' >> gradle.properties
-          echo 'android.enableJetifier=true' >> gradle.properties
-
-          APP_GRADLE=$(find . -name "build.gradle" -path "*/app/*" -print -quit)
-          if [ -n "$APP_GRADLE" ]; then
-            sed -i 's/minSdk .*/minSdk 26/g' "$APP_GRADLE"
-            sed -i 's/minSdkVersion .*/minSdkVersion 26/g' "$APP_GRADLE"
-          fi
-
-          find . -name "WorldMapActivityV5.kt" -delete
-
-          # Твоята функция за коментиране
-          comment_line() { sed -i "${1}s/.*/\/\/ COMMENTED/" "$2"; }
-
-          # Масово чистене на повтарящи се грешки
-          find . -name "*.kt" -exec sed -i 's/.*isFakeBoldText.*/\/\/ COMMENTED/g' {} +
-          find . -name "*.kt" -exec sed -i 's/.*progressTarget.*/\/\/ COMMENTED/g' {} +
-
-          # Корекции по файлове
-          F=$(find . -name "WorldMapActivity.kt" -print -quit)
-          [ -n "$F" ] && for L in 110 111 143; do comment_line $L "$F"; done
-
-          F=$(find . -name "WorldMapActivityV6.kt" -print -quit)
-          [ -n "$F" ] && for L in 123 141 196 213 224 226 228; do comment_line $L "$F"; done
-
-          F=$(find . -name "BossRushActivity.kt" -print -quit)
-          [ -n "$F" ] && sed -i '350,445s/.*/\/\/ COMMENTED/' "$F"
-
-          F=$(find . -name "TransformationActivity.kt" -print -quit)
-          [ -n "$F" ] && comment_line 50 "$F" && comment_line 72 "$F"
-
-          F=$(find . -name "StoryActivity.kt" -print -quit)
-          [ -n "$F" ] && for L in 176 193 205 213 361; do comment_line $L "$F"; done
-
-          F=$(find . -name "PrestigeActivity.kt" -print -quit)
-          [ -n "$F" ] && for L in 130 131 132 133 134; do comment_line $L "$F"; done
-
-          F=$(find . -name "QuestActivity.kt" -print -quit)
-          if [ -n "$F" ]; then
-             sed -i '174,234s/.*/\/\/ COMMENTED/' "$F"
-             echo "}" >> "$F"
-             echo "}" >> "$F"
-          fi
-
-          # Изпълнение на билда
-          chmod +x gradlew
-          ./gradlew assembleDebug
-
-      - name: Upload APK
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: MythosRise-Final-APK
-          path: "**/build/outputs/apk/debug/*.apk"
