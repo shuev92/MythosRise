@@ -57,16 +57,24 @@ jobs:
           find . -name "WorldMapActivity.kt" -exec rm -f {} \;
           find . -name "WorldMapActivityV5.kt" -exec rm -f {} \;
           
-          # 5. Масово заглушаване на isFakeBoldText и progressTarget във всички останали файлове
+          # 5. Масово заглушаване на стари променливи
           find . -name "*.kt" -exec sed -i '/isFakeBoldText/s/^/\/\/ /g' {} \;
           find . -name "*.kt" -exec sed -i '/progressTarget/s/^/\/\/ /g' {} \;
           
-          # 6. Специфични единични грешки
+          # 6. Специфични единични грешки (от миналия път)
           STORY=$(find . -name "StoryActivity.kt" -print -quit)
           [ -n "$STORY" ] && sed -i '205s/.*/\/\/ &/' "$STORY"
           
           V6=$(find . -name "WorldMapActivityV6.kt" -print -quit)
           [ -n "$V6" ] && sed -i '123s/.*/\/\/ &/; 141s/.*/\/\/ &/; 196s/.*/\/\/ &/; 226s/.*/\/\/ &/; 228s/.*/\/\/ &/' "$V6"
+          
+          # 7. НОВИТЕ ГРЕШКИ (Prestige и Quest)
+          PRESTIGE=$(find . -name "PrestigeActivity.kt" -print -quit)
+          [ -n "$PRESTIGE" ] && sed -i '293s/.*/\/\/ &/' "$PRESTIGE"
+          
+          QUEST=$(find . -name "QuestActivity.kt" -print -quit)
+          # Коментираме целия блок от 174 до 235 ред
+          [ -n "$QUEST" ] && sed -i '174,235s/.*/\/\/ &/' "$QUEST"
           
           # СТАРТ!
           gradle assembleDebug
