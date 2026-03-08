@@ -21,30 +21,32 @@ jobs:
 
       - name: Extract Project Files
         run: |
-          # 1. Сваляне и разархивиране на основния архив
+          # Сваляме и разархивираме всичко стъпка по стъпка
           wget "https://github.com/shuev92/MythosRise/archive/refs/heads/main.zip" -O main.zip
           unzip main.zip
           
-          # 2. Намиране и разархивиране на вътрешния проект
+          # Намираме вътрешния архив (този с интервалите в името) и го разархивираме
           INNER_ZIP=$(find . -name "*.zip" -not -name "main.zip" -print -quit)
           unzip "$INNER_ZIP" -d final_extract
 
-      - name: Build APK (Strict Version Control)
+      - name: Build APK (Stable Mode)
         run: |
-          # Намираме корена на проекта
+          # 1. Намираме къде точно се намира проектът (където е build.gradle)
           BUILD_GRADLE_PATH=$(find . -name "build.gradle" -not -path "*/app/*" -print -quit)
           PROJECT_ROOT=$(dirname "$BUILD_GRADLE_PATH")
           cd "$PROJECT_ROOT"
           
-          # ФИКС: Ръчно инсталираме Gradle 7.5, за да избегнем грешката с "версия 10"
-          wget -q https://services.gradle.org/distributions/gradle-7.5-bin.zip -O gradle.zip
-          unzip -q gradle.zip
+          echo "Проектът е намерен в: $PROJECT_ROOT"
+          
+          # 2. Ръчно инсталираме Gradle 7.5, за да избегнем грешката с "Gradle 10"
+          wget -q https://services.gradle.org/distributions/gradle-7.5-bin.zip -O gradle_dist.zip
+          unzip -q gradle_dist.zip
           export PATH=$PWD/gradle-7.5/bin:$PATH
           
-          # Генерираме wrapper и стартираме компилацията
+          # 3. Подготвяме и стартираме компилацията
           gradle wrapper --gradle-version 7.5
           chmod +x gradlew
-          ./gradlew assembleDebug -x lint
+          ./gradlew assembleDebug -x lint --stacktrace
 
       - name: Upload APK
         if: always()
