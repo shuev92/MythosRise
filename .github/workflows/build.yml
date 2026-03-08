@@ -1,6 +1,8 @@
-name: Build MythosRise APK
+ name: Build MythosRise APK
 
-on: [push, workflow_dispatch]
+on:
+  push:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -10,7 +12,7 @@ jobs:
 
       - name: Download zip from release
         run: |
-          wget https://github.com/shuev92/MythosRise/releases/download/v6/MythosRise_v6_READY_TO_TEST_.zip -O project.zip
+          wget "https://github.com/shuev92/MythosRise/releases/download/v6/MythosRise_v6_READY_TO_TEST_.zip" -O project.zip
 
       - name: Unzip project
         run: unzip project.zip -d extracted
@@ -22,7 +24,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v2
+        uses: android-actions/setup-android@v3
 
       - name: Fix gradle permissions
         run: chmod +x extracted/*/gradlew
@@ -31,7 +33,7 @@ jobs:
         run: cd extracted/*/ && ./gradlew assembleDebug
 
       - name: Upload APK
-        uses: upload-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: MythosRise-debug
-          path: extracted/**/app/build/outputs/apk/debug/*.apk
+          path: extracted/**/app/build/outputs/apk/debug/*.apk         
