@@ -22,27 +22,26 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-version: 8.5 # Инсталираме конкретна, стабилна версия директно
+          gradle-version: 8.5
 
       - name: Extract Project Files
         run: |
-          # 1. Сваляме основния архив
           wget "https://github.com/shuev92/MythosRise/archive/refs/heads/main.zip" -O main.zip
           unzip main.zip
-          
-          # 2. Намираме вътрешния архив и го разархивираме в папка "app_source"
           INNER_ZIP=$(find . -name "*.zip" -not -name "main.zip" -print -quit)
           unzip "$INNER_ZIP" -d app_source
 
-      - name: Run Build
+      - name: Run Build with Fixes
         run: |
-          # Намираме къде е build.gradle
+          # 1. Намираме корена на проекта
           ROOT_PATH=$(find app_source -name "build.gradle" -not -path "*/app/*" -print -quit | xargs dirname)
           cd "$ROOT_PATH"
           
-          echo "Проектът е намерен в: $PWD"
+          # 2. ФИКС: Активираме AndroidX поддръжката в gradle.properties
+          echo "android.useAndroidX=true" >> gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
           
-          # Тъй като нямаш gradlew файл, ползваме току-що инсталирания системно gradle
+          # 3. Стартираме компилацията
           gradle assembleDebug --stacktrace
 
       - name: Upload APK
