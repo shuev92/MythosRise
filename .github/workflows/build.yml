@@ -13,22 +13,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download project zip
-        # Замени линка по-долу с твоя реален линк, ако е различен
-        run: wget "https://github.com/shuev92/MythosRise/archive/refs/heads/main.zip" -O project.zip
-
-      - name: Unzip project
-        run: |
-          unzip project.zip -d temp_folder
-          cp -rn temp_folder/*/* . || cp -rn temp_folder/* . || true
-          rm -rf temp_folder project.zip
-
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
+          # Премахнахме кеша тук, за да не дава грешка, преди да сме разархивирали
+
+      - name: Download project zip
+        run: wget "https://github.com/shuev92/MythosRise/archive/refs/heads/main.zip" -O project.zip
+
+      - name: Unzip project
+        run: |
+          unzip project.zip
+          # Преместваме всичко от подпапката в основната директория
+          mv MythosRise-main/* . || true
+          # Почистваме
+          rm -rf MythosRise-main project.zip
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
