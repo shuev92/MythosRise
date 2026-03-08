@@ -19,34 +19,27 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Force Extract Everything
+      - name: Extract Project Files
         run: |
-          # 1. Сваляме основния архив
           wget "https://github.com/shuev92/MythosRise/archive/refs/heads/main.zip" -O main.zip
           unzip main.zip
-          
-          # 2. Намираме ВСИЧКИ zip файлове вътре и ги разархивираме
-          # Правим го рекурсивно, за да сме сигурни
-          find . -name "*.zip" -not -name "main.zip" -exec unzip -o {} -d extracted_project \;
+          # Търсим вътрешния архив и го разархивираме
+          INNER_ZIP=$(find . -name "*.zip" -not -name "main.zip" -print -quit)
+          unzip "$INNER_ZIP" -d final_extract
 
-      - name: Build APK (Search and Destroy)
+      - name: Build APK (Fixing missing Gradle)
         run: |
-          # Намираме къде е файлът gradlew, без значение колко дълбоко е
-          REAL_PATH=$(find . -name "gradlew" -print -quit)
-          
-          if [ -z "$REAL_PATH" ]; then
-            echo "ГРЕШКА: gradlew не е намерен никъде!"
-            ls -R
-            exit 1
-          fi
-          
-          # Влизаме в папката на проекта
-          PROJECT_ROOT=$(dirname "$REAL_PATH")
+          # 1. Намираме къде е основният build.gradle файл
+          BUILD_GRADLE_PATH=$(find . -name "build.gradle" -not -path "*/app/*" -print -quit)
+          PROJECT_ROOT=$(dirname "$BUILD_GRADLE_PATH")
           cd "$PROJECT_ROOT"
           
-          echo "Работим в директория: $PROJECT_ROOT"
+          echo "Проектът е в: $PROJECT_ROOT"
           
-          # Даваме права и строим
+          # 2. Понеже няма gradlew, инсталираме го на място
+          gradle wrapper
+          
+          # 3. Даваме права и строим
           chmod +x gradlew
           ./gradlew assembleDebug
 
